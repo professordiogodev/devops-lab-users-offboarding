@@ -1,6 +1,4 @@
-# Users & Groups: Offboarding Friday
-
-A senior developer leaves today. Audit a messy server, find the accounts nobody remembers, and remove access cleanly without breaking anything.
+<p align="center"><img src="assets/banner.svg" alt="Users & Groups: Offboarding Friday" width="100%"></p>
 
 | | |
 |-|-|
@@ -17,9 +15,10 @@ A senior developer leaves today. Audit a messy server, find the accounts nobody 
 5. Commit and push. Open the **Actions** tab of your fork (click *I understand my workflows, go ahead and enable them* the first time). The **Lab check** shows what is still missing.
 6. When the check is green, **submit the URL of your fork** in the course platform.
 
+> [!NOTE]
 > The check only looks at your answers and any files the lab asks you to commit. Your instructor reads your work and may ask you to explain any line.
 
----
+<p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
 
 ## The situation
 
@@ -27,6 +26,7 @@ Friday, 16:45. Maya, Clipstr's lead developer, leaves the company today. Her lap
 
 You open the staging server and find out nobody has looked at its accounts in two years. Maya has `sudo`. She belongs to several groups. Files and jobs and processes are hers. And somewhere in there, there might be accounts that nobody remembers.
 
+> [!IMPORTANT]
 > **Your mission**
 > - **Audit** the server and find every account and permission that is a risk
 > - **Offboard Maya**: remove every way she can get in, keep her work, and hand it to Priya
@@ -35,7 +35,7 @@ You open the staging server and find out nobody has looked at its accounts in tw
 
 **Time:** 60-75 min | **Cost:** free | **You need:** your Ubuntu environment with `sudo`. This lab creates users on it, so do not run it on a shared machine. `sudo ./teardown.sh` removes everything.
 
----
+<p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
 
 ## Part 0 - Set the scene
 
@@ -53,7 +53,7 @@ sudo ./verify.sh
 
 Do not fix anything from the list yet. First you investigate.
 
----
+<p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
 
 ## Part 1 - Audit: who is on this server?
 
@@ -69,11 +69,13 @@ You get questions, not commands. Finding the command is your job. Use `man`, `--
 | 6 | What does `passwd -S` print for each human? What do the letters mean? | `man passwd` |
 | 7 | When did Maya last change her password? Does it ever expire? | `chage -l` |
 
+> [!NOTE]
 > **Predict** Before you run anything for question 4: how many accounts do you expect to have UID 0? Then check. If the answer is more than one, you just found the most dangerous thing on this server.
 
+> [!NOTE]
 > **Think** For question 2: why is `%devs ALL=(ALL) NOPASSWD: ALL` a problem for *every* member of the group, not just Maya? What does `NOPASSWD` change if someone steals a developer's SSH key?
 
----
+<p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
 
 ## Part 2 - Investigate: where is Maya's footprint?
 
@@ -87,9 +89,10 @@ Deleting her account is not offboarding. Access hides in five places. Find each 
 
 Write down, for each, the command that found it. One of her files is `/srv/clipstr/backups`, a directory the whole team writes into. What happens to that directory if you just delete Maya?
 
+> [!NOTE]
 > **Think** `restore-db.md` in her home directory explains how to restore the database, and she is the only person who knows. What is the cost of deleting her home directory today?
 
----
+<p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
 
 ## Part 3 - Experiment: why not just delete the account?
 
@@ -103,6 +106,7 @@ sudo chmod 600 /home/ghost/diary.txt
 sudo userdel ghost
 ```
 
+> [!NOTE]
 > **Predict** The account is gone but the home directory (without `-r`) is still there. Who owns `/home/ghost/diary.txt` now? What will `ls -l` show?
 
 Check with `sudo ls -ln /home/ghost` and `sudo find / -xdev -nouser`. Then create a **brand new** user, `stranger`, and compare its UID with ghost's old one:
@@ -113,11 +117,12 @@ id stranger
 sudo cat /home/ghost/diary.txt
 ```
 
+> [!WARNING]
 > **Break it** `stranger` is a completely different person, yet something strange just happened. Explain what, in your own words. This is why the rule on a real server is: **lock and expire, do not delete, until you have handed the files over**.
 
 Remove the experiment: `sudo userdel -r stranger; sudo rm -rf /home/ghost`.
 
----
+<p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
 
 ## Part 4 - Offboard Maya (a script, because there will be a next time)
 
@@ -134,13 +139,15 @@ Write `offboard.sh` that does **everything**, for any user given as `$1`, in a s
 
 Make it a proper script: `set -euo pipefail`, a `usage` message when `$1` is missing, and a variable for the successor.
 
+> [!TIP]
 > **Stuck?** Starting points: `usermod -L -e 1 -s ...`, `pkill -KILL -u`, `crontab -u USER -r`, `gpasswd -d USER GROUP`, `tar czf`, `find DIR -user USER -exec chown NEW {} +`. Look each one up before you use it.
 
 Then deal with the accounts nobody remembered. Decide what to do with the extra UID 0 account and with `sam-contractor` (the empty password). Put those fixes in the same script, or in a second one, and **write one sentence in your submission about why** you chose to delete or to lock each.
 
+> [!TIP]
 > **Checkpoint** Test it: `sudo su - maya` should now refuse to give you a shell, and `sudo ./verify.sh` should show the "Maya has left" and "accounts nobody remembered" sections green.
 
----
+<p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
 
 ## Part 5 - Onboard Tomas, with the least sudo possible
 
@@ -158,11 +165,12 @@ Rules for sudo files:
 1. Put your rule in its own file in `/etc/sudoers.d/` (mode `0440`), never edit `/etc/sudoers` directly.
 2. Always validate **before** installing: `visudo -cf yourfile`.
 
+> [!WARNING]
 > **Break it** Write a draft with a typo (for example `NOPASWD:`) and run `visudo -cf` on it. Read the error. Now think about what would happen if you had put that typo straight into `/etc/sudoers.d/` with a normal editor, and then lost your only root session.
 
 Prove it: `sudo -l -U tomas` should list exactly one command.
 
----
+<p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
 
 ## Part 6 - Prove nobody else was harmed
 
@@ -172,7 +180,7 @@ sudo ./verify.sh
 
 Every check must pass. `verify.sh` also checks that Priya still has her groups and her account, because offboarding that locks out the team is a worse day than the leak you were preventing.
 
----
+<p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
 
 ## Level up (optional)
 
