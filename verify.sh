@@ -16,8 +16,8 @@ check "Maya is not in devs or ops"                           bash -c "! id -nG m
 check "Maya's SSH key no longer works (authorized_keys gone or empty)" bash -c "[ ! -s /home/maya/.ssh/authorized_keys ]"
 check "Maya has no cron jobs"                                bash -c "! crontab -l -u maya 2>/dev/null | grep -q ."
 check "No process runs as Maya"                              bash -c "! pgrep -u maya >/dev/null"
-check "Nothing under /srv/clipstr is owned by Maya"          bash -c "[ -z \"\$(find /srv/clipstr -user maya 2>/dev/null)\" ]"
-check "...her files went to priya (the successor)"           test "$(stat -c %U /srv/clipstr/releases/v3.txt)" = priya
+check "Nothing under /srv/clippy is owned by Maya"          bash -c "[ -z \"\$(find /srv/clippy -user maya 2>/dev/null)\" ]"
+check "...her files went to priya (the successor)"           test "$(stat -c %U /srv/clippy/releases/v3.txt)" = priya
 check "Her knowledge is saved: /var/backups/maya-home.tar.gz exists" bash -c "[ -s /var/backups/maya-home.tar.gz ] && tar tzf /var/backups/maya-home.tar.gz | grep -q restore-db.md"
 
 echo "== The accounts nobody remembered =="
@@ -33,7 +33,7 @@ echo "== Tomas, the new hire =="
 check "tomas exists with a home directory and bash"         bash -c "getent passwd tomas | grep -q ':/home/tomas:/bin/bash' && [ -d /home/tomas ]"
 check "tomas is in devs"                                    in_group tomas devs
 check "tomas must change his password at first login"       bash -c "chage -l tomas | grep -qi 'must be changed'"
-check "tomas can restart clipstr with sudo"                 bash -c "sudo -l -U tomas | grep -q 'systemctl restart clipstr'"
+check "tomas can restart clippy with sudo"                 bash -c "sudo -l -U tomas | grep -q 'systemctl restart clippy'"
 check "...and nothing else (no ALL)"                        bash -c "! sudo -l -U tomas | grep -qE '\\) (NOPASSWD: )?ALL'"
 
 echo "== Nobody else was harmed =="

@@ -24,7 +24,7 @@
 
 <p align="center"><img src="assets/gifs/situation.gif" width="300" alt=""></p>
 
-Friday, 16:45. Maya, Clipstr's lead developer, leaves the company today. Her laptop goes back at 17:30. The CTO has one instruction: *"By the time she walks out, she must have no way into our servers. And do not break anything while you do it."*
+Friday, 16:45. Maya, Clippy's lead developer, leaves the company today. Her laptop goes back at 17:30. The CTO has one instruction: *"By the time she walks out, she must have no way into our servers. And do not break anything while you do it."*
 
 You open the staging server and find out nobody has looked at its accounts in two years. Maya has `sudo`. She belongs to several groups. Files and jobs and processes are hers. And somewhere in there, there might be accounts that nobody remembers.
 
@@ -89,7 +89,7 @@ Deleting her account is not offboarding. Access hides in five places. Find each 
 4. **Processes:** is anything running **as Maya** right now? (`ps`, `pgrep`)
 5. **Files:** which files outside her home directory does she own? (`find / -xdev -user maya`)
 
-Write down, for each, the command that found it. One of her files is `/srv/clipstr/backups`, a directory the whole team writes into. What happens to that directory if you just delete Maya?
+Write down, for each, the command that found it. One of her files is `/srv/clippy/backups`, a directory the whole team writes into. What happens to that directory if you just delete Maya?
 
 > [!NOTE]
 > **Think** `restore-db.md` in her home directory explains how to restore the database, and she is the only person who knows. What is the cost of deleting her home directory today?
@@ -136,7 +136,7 @@ Write `offboard.sh` that does **everything**, for any user given as `$1`, in a s
 - **Empty** her SSH `authorized_keys`
 - **Remove** her from `sudo`, `devs` and `ops`
 - **Archive** her home directory to `/var/backups/maya-home.tar.gz`, so her knowledge survives
-- **Reassign** her files under `/srv/clipstr` to **Priya**
+- **Reassign** her files under `/srv/clippy` to **Priya**
 - NOT delete the account
 
 Make it a proper script: `set -euo pipefail`, a `usage` message when `$1` is missing, and a variable for the successor.
@@ -159,7 +159,7 @@ Write `onboard.sh` that:
 
 - Creates `tomas` with a home directory and `bash`, in the group `devs`
 - Sets a temporary password and **forces a change at first login**
-- Gives him sudo for **exactly one command**: `systemctl restart clipstr`, without a password prompt, and nothing else
+- Gives him sudo for **exactly one command**: `systemctl restart clippy`, without a password prompt, and nothing else
 - Removes the old `%devs ... NOPASSWD: ALL` rule
 
 Rules for sudo files:

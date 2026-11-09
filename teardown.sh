@@ -9,5 +9,5 @@ for u in toor priya maya sam-contractor tomas ghost stranger; do
 done
 userdel backup-svc 2>/dev/null
 groupdel devs 2>/dev/null; groupdel ops 2>/dev/null
-rm -rf /srv/clipstr /var/backups/maya-home* /home/maya /home/tomas /home/ghost /home/stranger
+rm -rf /srv/clippy /var/backups/maya-home* /home/maya /home/tomas /home/ghost /home/stranger
 echo "Lab environment removed."

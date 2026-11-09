@@ -15,7 +15,7 @@ for u in maya priya tomas sam-contractor ghost stranger; do check "user $u is go
 check "only root has UID 0 (toor is gone)" bash -c "[ \"\$(awk -F: '\$3==0{print \$1}' /etc/passwd | tr '\n' ' ')\" = 'root ' ]"
 check "group devs is gone" no_group devs
 check "group ops is gone" no_group ops
-check "/srv/clipstr is gone" no_path /srv/clipstr
+check "/srv/clippy is gone" no_path /srv/clippy
 check "/etc/sudoers.d has no lab rules" bash -c "[ ! -e /etc/sudoers.d/devs ] && [ ! -e /etc/sudoers.d/tomas ]"
 check "the offboarding archive is gone" no_path /var/backups/maya-home.tar.gz
 check "no process runs the lab background job" no_proc backup-sync
