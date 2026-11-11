@@ -22,15 +22,23 @@
 
 ## 🎬 The situation
 
-<p align="center"><img src="assets/gifs/situation.gif" width="300" alt=""></p>
+<p align="center"><img src="assets/gifs/situation.gif" width="300" alt="Before and after: two accounts of people who left can still log in, then they are locked and their keys removed"></p>
 
-Friday, 16:45. Maya, Clippy's lead developer, leaves the company today. Her laptop goes back at 17:30. The CTO has one instruction: *"By the time she walks out, she must have no way into our servers. And do not break anything while you do it."*
+```text
+ACCESS REVIEW - clippy-staging
+Requested by : the insurer of the forty-cafe franchise that runs on Clippy
+Last year's finding : "No evidence that accounts have been reviewed in 24 months."
+Reviewer on site : you
+Hard stop : the leaver's laptop goes back at 17:30
+```
 
-You open the staging server and find out nobody has looked at its accounts in two years. Maya has `sudo`. She belongs to several groups. Files and jobs and processes are hers. And somewhere in there, there might be accounts that nobody remembers.
+The leaver is Maya, Clippy's lead developer. The CTO's only instruction: *"By the time she walks out, she must have no way into our servers, and nothing may break."* The auditor's only instruction: *"Show me evidence, not promises."*
+
+The review has two acts. In **Act 1** you audit the server and collect evidence, and you do not fix anything. At the interval a message arrives. In **Act 2** you remediate, with scripts, because there will be a next leaver.
 
 > [!IMPORTANT]
 > **Your mission**
-> - **Audit** the server and find every account and permission that is a risk
+> - **Audit** the server and find every account and permission that is a risk (each one is a numbered *control* with the evidence you must show)
 > - **Offboard Maya**: remove every way she can get in, keep her work, and hand it to Priya
 > - **Onboard Tomas**, the new hire, with only the sudo right he needs
 > - Prove nobody else was harmed
@@ -39,7 +47,9 @@ You open the staging server and find out nobody has looked at its accounts in tw
 
 <p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
 
-## Part 0 - Set the scene
+## Act 1 - The audit (look, do not touch)
+
+### Part 0 - Open the file
 
 Fork this repository, clone your fork inside your Ubuntu environment, then run:
 
@@ -47,58 +57,54 @@ Fork this repository, clone your fork inside your Ubuntu environment, then run:
 sudo ./setup.sh
 ```
 
-Then look at what `verify.sh` thinks of the server right now (it will be unhappy, that is the point):
+Then see what the automated review thinks of the server right now (it will be unhappy, that is the point):
 
 ```bash
 sudo ./verify.sh
 ```
 
-Do not fix anything from the list yet. First you investigate.
+Do not fix anything from the list yet. An auditor who fixes while looking destroys the evidence.
 
-<p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
+### Part 1 - Controls A1 to A7: who is on this server?
 
-## Part 1 - Audit: who is on this server?
+<p align="center"><img src="assets/gifs/recon.gif" width="300" alt="A highlighted line moving down a list of files, the way you read evidence"></p>
 
-You get questions, not commands. Finding the command is your job. Use `man`, `--help`, or ask your AI chat *how* to find something. Keep a note of the command that answered each question, you will paste some in your submission.
+Each control is a question. Finding the command is part of the job: use `man`, `--help`, or ask your AI chat *how* to find something. For each control, write down the command that produced the evidence. You will paste some of them in your submission.
 
-| # | Question | Where to look |
-|---|----------|---------------|
-| 1 | How many human accounts exist (UID 1000 or above)? Who are they? | `/etc/passwd`, `getent` |
-| 2 | Who can use `sudo`? There are **two different ways** someone can get it. Find both. | groups, `/etc/sudoers.d/` |
-| 3 | Which accounts are in the group `devs`? In `ops`? | `getent group`, `id` |
-| 4 | Is there any account **other than root** that has UID 0? What does that mean? | `/etc/passwd`, third field |
-| 5 | Is there any account with an **empty password**? | `/etc/shadow` (root only), second field |
-| 6 | What does `passwd -S` print for each human? What do the letters mean? | `man passwd` |
-| 7 | When did Maya last change her password? Does it ever expire? | `chage -l` |
-
-> [!NOTE]
-> **Predict** Before you run anything for question 4: how many accounts do you expect to have UID 0? Then check. If the answer is more than one, you just found the most dangerous thing on this server.
+| Control | Question | Where to look |
+|---------|----------|---------------|
+| A1 | How many human accounts exist (UID 1000 or above)? Who are they? | `/etc/passwd`, `getent` |
+| A2 | Who can use `sudo`? There are **two different ways** someone can get it. Find both. | groups, `/etc/sudoers.d/` |
+| A3 | Which accounts are in the group `devs`? In `ops`? | `getent group`, `id` |
+| A4 | Is there any account **other than root** that has UID 0? What does that mean? | `/etc/passwd`, third field |
+| A5 | Is there any account with an **empty password**? | `/etc/shadow` (root only), second field |
+| A6 | What does `passwd -S` print for each human? What do the letters mean? | `man passwd` |
+| A7 | When did Maya last change her password? Does it ever expire? | `chage -l` |
 
 > [!NOTE]
-> **Think** For question 2: why is `%devs ALL=(ALL) NOPASSWD: ALL` a problem for *every* member of the group, not just Maya? What does `NOPASSWD` change if someone steals a developer's SSH key?
+> **Predict** Before you run anything for control A4: how many accounts do you expect to have UID 0? Then check. If the answer is more than one, you just found the most dangerous thing on this server.
 
-<p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
+> [!NOTE]
+> **Think** For control A2: why is `%devs ALL=(ALL) NOPASSWD: ALL` a problem for *every* member of the group, not just Maya? What does `NOPASSWD` change if someone steals a developer's SSH key?
 
-## Part 2 - Investigate: where is Maya's footprint?
+### Part 2 - Controls B1 to B5: where is Maya's footprint?
 
-Deleting her account is not offboarding. Access hides in five places. Find each one:
+Deleting her account is not offboarding. Access hides in five places, one control for each. Find the evidence for all five:
 
-1. **Groups:** which privileged groups is she in?
-2. **SSH:** how could she log in without a password from her laptop? Look in her home directory.
-3. **Cron:** does she have scheduled jobs running on this server?
-4. **Processes:** is anything running **as Maya** right now? (`ps`, `pgrep`)
-5. **Files:** which files outside her home directory does she own? (`find / -xdev -user maya`)
+1. **B1 Groups:** which privileged groups is she in?
+2. **B2 SSH:** how could she log in without a password from her laptop? Look in her home directory.
+3. **B3 Cron:** does she have scheduled jobs running on this server?
+4. **B4 Processes:** is anything running **as Maya** right now? (`ps`, `pgrep`)
+5. **B5 Files:** which files outside her home directory does she own? (`find / -xdev -user maya`)
 
-Write down, for each, the command that found it. One of her files is `/srv/clippy/backups`, a directory the whole team writes into. What happens to that directory if you just delete Maya?
+One of her files is `/srv/clippy/backups`, a directory the whole team writes into. What happens to that directory if you just delete Maya?
 
 > [!NOTE]
 > **Think** `restore-db.md` in her home directory explains how to restore the database, and she is the only person who knows. What is the cost of deleting her home directory today?
 
-<p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
+### Part 3 - Exhibit C: why not just delete the account?
 
-## Part 3 - Experiment: why not just delete the account?
-
-Do this on a throwaway user so you can see it for yourself:
+The auditor does not accept "that is how everybody does it". Produce an experiment on a throwaway user:
 
 ```bash
 sudo useradd -m ghost
@@ -126,7 +132,19 @@ Remove the experiment: `sudo userdel -r stranger; sudo rm -rf /home/ghost`.
 
 <p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
 
-## Part 4 - Offboard Maya (a script, because there will be a next time)
+## Interval - 16:50
+
+A message from the CTO lands in the team chat:
+
+> *"Auditor just asked for the remediation evidence together with the findings. She is waiting in the lobby. 40 minutes."*
+
+Your notes are your evidence. Act 2 is where the findings turn into scripts.
+
+<p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
+
+## Act 2 - Remediation (and the proof)
+
+### Part 4 - Remediation R1: offboard Maya (a script, because there will be a next time)
 
 Write `offboard.sh` that does **everything**, for any user given as `$1`, in a safe order. At the end it must:
 
@@ -144,14 +162,12 @@ Make it a proper script: `set -euo pipefail`, a `usage` message when `$1` is mis
 > [!TIP]
 > **Stuck?** Starting points: `usermod -L -e 1 -s ...`, `pkill -KILL -u`, `crontab -u USER -r`, `gpasswd -d USER GROUP`, `tar czf`, `find DIR -user USER -exec chown NEW {} +`. Look each one up before you use it.
 
-Then deal with the accounts nobody remembered. Decide what to do with the extra UID 0 account and with `sam-contractor` (the empty password). Put those fixes in the same script, or in a second one, and **write one sentence in your submission about why** you chose to delete or to lock each.
+Then deal with the accounts nobody remembered (controls A4 and A5). Decide what to do with the extra UID 0 account and with `sam-contractor` (the empty password). Put those fixes in the same script, or in a second one, and **write one sentence in your submission about why** you chose to delete or to lock each.
 
 > [!TIP]
 > **Checkpoint** Test it: `sudo su - maya` should now refuse to give you a shell, and `sudo ./verify.sh` should show the "Maya has left" and "accounts nobody remembered" sections green.
 
-<p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
-
-## Part 5 - Onboard Tomas, with the least sudo possible
+### Part 5 - Remediation R2: onboard Tomas, with the least sudo possible
 
 Tomas starts Monday. He needs to restart the app when it hangs, and nothing else.
 
@@ -172,9 +188,9 @@ Rules for sudo files:
 
 Prove it: `sudo -l -U tomas` should list exactly one command.
 
-<p align="center"><img src="assets/divider.svg" alt="" width="100%"></p>
+### Part 6 - Prove it: nobody else was harmed
 
-## Part 6 - Prove nobody else was harmed
+<p align="center"><img src="assets/gifs/verify.gif" width="300" alt="A terminal running verify.sh and printing PASS lines"></p>
 
 ```bash
 sudo ./verify.sh
@@ -193,7 +209,7 @@ Every check must pass. `verify.sh` also checks that Priya still has her groups a
 <!-- teardown:start (generated by labs.py, do not edit) -->
 ## Tear down (mandatory)
 
-<p align="center"><img src="assets/gifs/teardown.gif" width="300" alt=""></p>
+<p align="center"><img src="assets/gifs/teardown.gif" width="300" alt="A terminal running verify-teardown.sh and printing TEARDOWN VERIFIED"></p>
 
 Resources left behind cost money, keep doors open and pollute the next lab. Removing what you created is part of the job, so it is part of the submission: **you must prove it is gone**.
 
